@@ -4,16 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 @AGENTS.md
 
-## Commands
-
-```bash
-npm run dev      # dev server (Turbopack default in Next 16), http://localhost:3000
-npm run build    # production build
-npm run start    # serve the production build
-npm run lint     # eslint (flat config, no path arg needed)
-```
-
-No test runner is installed. If tests are needed, see `node_modules/next/dist/docs/01-app/02-guides/testing/` before picking one.
+## Skils
+Usas siempre /frontend-design para diseñar la interfaz de usuario
 
 ## Project state
 
