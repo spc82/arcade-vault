@@ -973,3 +973,96 @@ a { color: inherit; text-decoration: none; }
   clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
 }
 @keyframes spinpix { to { transform: rotate(360deg); } }
+
+/* ===== compact page heading (library) ===== */
+.av-page-head {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 40px 32px 0;
+}
+.av-page-head h1 {
+  margin: 0;
+  font-size: clamp(16px, 2.6vw, 24px);
+  letter-spacing: 0.14em;
+}
+
+/* ===== arcade 404 ===== */
+.av-404 {
+  max-width: 720px;
+  margin: 80px auto;
+  padding: 40px 32px;
+  text-align: center;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  box-shadow: 0 0 24px rgba(255, 0, 110, 0.12), inset 0 0 24px rgba(0, 0, 0, 0.6);
+  clip-path: polygon(0 12px, 12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+}
+.av-404 .code {
+  font-family: var(--pixel);
+  font-size: clamp(40px, 9vw, 72px);
+  letter-spacing: 0.08em;
+  color: var(--magenta);
+  text-shadow: 0 0 10px rgba(255, 0, 110, 0.7), 0 0 28px rgba(255, 0, 110, 0.4);
+}
+.av-404 .msg {
+  margin-top: 18px;
+  font-family: var(--pixel);
+  font-size: clamp(11px, 1.8vw, 14px);
+  letter-spacing: 0.18em;
+  color: var(--cyan);
+  text-shadow: 0 0 8px rgba(0, 245, 255, 0.5);
+}
+.av-404 p {
+  margin: 16px 0 28px;
+  color: var(--ink-dim);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+@media (max-width: 720px) {
+  .av-page-head { padding: 28px 16px 0; }
+  .av-404 { margin: 40px 16px; padding: 28px 20px; }
+}
+
+/* ===== keyboard focus ===== */
+:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+}
+.card:focus-visible,
+.chip:focus-visible,
+.btn:focus-visible {
+  box-shadow: 0 0 14px rgba(0, 245, 255, 0.55);
+}
+
+/* ===== very narrow screens (360–420px) ===== */
+@media (max-width: 420px) {
+  /* the hamburger was pushed past the right edge and clipped by overflow-x */
+  .av-nav { gap: 10px; padding: 12px 10px; }
+  .av-nav .logo-text { font-size: 10px; }
+  .av-nav .auth-btn { margin-left: 0; padding: 10px 12px; font-size: 8px; }
+  .av-nav .hamburger { padding: 10px 12px; }
+
+  /* three pixel-font columns can't fit: min-content forced a 354px row */
+  .stat-strip { grid-template-columns: 1fr; }
+
+  /* keep all four columns readable by scrolling the table, not the page */
+  .hall-table { overflow-x: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flicker,
+  .blink,
+  .btn.pulse,
+  .game-arena .grid-floor,
+  .game-arena .player-ship,
+  .game-arena .enemy,
+  .spinner {
+    animation: none;
+  }
+  .fade-in,
+  .slide-in,
+  .hall-table .tr {
+    animation-duration: 1ms;
+  }
+}
