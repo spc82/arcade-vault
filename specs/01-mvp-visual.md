@@ -1,6 +1,6 @@
 # SPEC 01 — MVP visual de Arcade Vault
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** —
 > **Fecha:** 2026-08-06
 > **Objetivo:** Portar el prototipo estático de `references/templates/` a seis pantallas de Next.js App Router, solo capa visual, sin motor de juego.
