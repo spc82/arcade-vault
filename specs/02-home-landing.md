@@ -1,6 +1,6 @@
 # SPEC 02 — Home de Arcade Vault
 
-> **Estado:** Aprobado
+> **Estado:** Implementado
 > **Depende de:** `01-mvp-visual.md` (Implementado)
 > **Fecha:** 2026-08-20
 > **Objetivo:** Sustituir la landing mínima de `/` por el home completo de seis secciones de `references/templates/home-about/home.jsx`, sin tocar la página About.
@@ -23,12 +23,13 @@
 - `components/home-decor.tsx` (servidor): `FloatingSilhouettes` (ocho SVG pixel) y `FeatureIcon` (`GAMEPAD`, `FREE`, `TROPHY`, `ROCKET`).
 - `lib/home.ts`: constantes tipadas `FEATURES`, `HOME_STATS`, `TICKER`, `TOP_TODAY`, `PRICING_PERKS`, `FAQ`.
 - Hook `useReveal` (IntersectionObserver, `threshold: 0.12`, `unobserve` tras entrar) dentro de `components/home-landing.tsx`.
-- Añadido a `app/globals.css` del bloque de home del `styles.css` del template, verbatim, más una regla nueva de `prefers-reduced-motion` para `.reveal`.
+- Añadido a `app/globals.css` del bloque de home del `styles.css` del template, verbatim, más tres bloques propios al final del archivo: `prefers-reduced-motion` para el home, y dos correcciones de responsive detectadas en el paso 9.
 - Enlaces con `next/link` a `/biblioteca`, `/acceso`, `/salon` y `/juego/<id>` desde las `mini-card`.
 
 **Fuera de alcance:**
 
-- **La página About en cualquier forma.** No se crea `/acerca`, no se porta `about.jsx`, no se añade el enlace `Acerca de` al nav ni al panel móvil, y no se copia al CSS ningún bloque `about-*`, `gp-*`, `contact-*`, `term-*`, `div-*`, `lg-*`, `highlight*`, `score-pop`, `live-led`, `rivet`, `screw`.
+- **La página About en cualquier forma.** No se crea `/acerca`, no se porta `about.jsx`, no se añade el enlace `Acerca de` al nav ni al panel móvil, y no se copia al CSS ningún bloque `about-*`, `gp-*`, `contact-*`, `term-*`, `div-*`, `lg-*`, `highlight*`, `score-pop`, `rivet`, `screw`.
+- `.live-led` y su `@keyframes pulse-led`. Están físicamente dentro del rango ACTIVITY que sí se copia, pero no los usa **ningún** template (`grep -c live-led` da `0` en `home.jsx` y en `about.jsx`): son CSS huérfano. Se excluyen a mano.
 - Cambios en `components/nav.tsx` y `components/site-footer.tsx`. El nav se queda con Inicio · Biblioteca · Salón de la Fama.
 - Cambios en `lib/games.ts`, `lib/scores.ts` y en las otras cinco pantallas.
 - Datos reales: ticker, top de hoy y estadísticas son constantes fijas. No leen `av_scores` ni `seededScores`.
@@ -109,21 +110,36 @@ Cada paso deja la aplicación arrancable con `npm run dev` y es committeable por
    - líneas **930–1069** — `/* ===== HOME PAGE ===== */` hasta `.reveal.in`, incluidos `@keyframes bounce` y `@keyframes float`
    - líneas **1621–1725** — `/* ===== ACTIVITY ... */` hasta `.faq-a`, incluido `@keyframes tickin`
 
-   No copiar nada entre 1070 y 1620 (bloque About) ni desde 1726 (`.fade-in` y siguientes ya existen). No modificar ninguna regla previa de `globals.css`. Verificación: la app arranca igual; las clases nuevas no colisionan con ninguna existente.
+   No copiar nada entre 1070 y 1620 (bloque About) ni desde 1726 (`.fade-in` y siguientes ya existen). Del segundo rango, borrar a mano las cuatro líneas de `.live-led` y `@keyframes pulse-led`: caen dentro del rango pero son CSS huérfano que no usa ningún template. No modificar ninguna regla previa de `globals.css`. Verificación: la app arranca igual; las clases nuevas no colisionan con ninguna existente; `head -1068 app/globals.css` sigue idéntico byte a byte al archivo original.
 
 3. **Decoración.** Crear `components/home-decor.tsx` (sin `"use client"`) exportando `FloatingSilhouettes` (contenedor `home-silos` con `aria-hidden="true"` y los ocho SVG `s1`–`s8`) y `FeatureIcon({ kind }: { kind: FeatureIconKind })` con los cuatro iconos de 16×16. `fill` y `stroke` en `currentColor`; los rects "huecos" mantienen el `#0a0a0f` literal del template. Verificación: `npx tsc --noEmit` limpio; ningún componente lo usa todavía.
 
 4. **Hero y sustitución de la landing.** Crear `components/home-landing.tsx` con `"use client"`, el hook `useReveal` y, de momento, solo el hero: raíz `<div className="home fade-in">`, `<FloatingSilhouettes />`, eyebrow, `home-title` en tres líneas, subtítulo con `<br/>`, dos `<Link className="btn xl …">` a `/biblioteca` y `/acceso`, e indicador `hero-scroll` con `aria-hidden`. Reescribir `app/page.tsx` para que solo renderice `<HomeLanding />`; borrar el hero antiguo y el import de `Link`. Verificación: `/` muestra el hero nuevo a pantalla completa con las silhouettes flotando; ambos botones navegan.
 
-5. **Secciones 01 y 02.** Añadir a `home-landing.tsx` el bloque `¿POR QUÉ ARCADE VAULT?` (mapeando `FEATURES` sobre `feature-card` con `transitionDelay` de `i * 80` ms) y `JUEGOS DISPONIBLES AHORA` (`mini-rail` con `GAMES.slice(0, 6)`, cada `mini-card` es un `<Link href={"/juego/" + g.id}>`, más el botón `VER TODOS LOS JUEGOS →`). Ambas secciones llevan `className="home-section reveal"`. Verificación: al bajar, las dos secciones aparecen con el fundido; pulsar una portada abre su ficha.
+5. **Secciones 01 y 02.** Añadir a `home-landing.tsx` el bloque `¿POR QUÉ ARCADE VAULT?` (mapeando `FEATURES` sobre `feature-card` con `transitionDelay` de `i * 80` ms) y `JUEGOS DISPONIBLES AHORA` (`mini-rail` con `GAMES.slice(0, 6)`, cada `mini-card` es un `<Link href={"/juego/" + g.id}>`, más el botón `VER TODOS LOS JUEGOS →`). Ambas secciones llevan `className="home-section reveal"`. Los kickers van como `{"// 01"}` y `{"// 02"}`, no como texto suelto: ESLint los lee como comentario y falla con `react/jsx-no-comment-textnodes`. El HTML renderizado es idéntico. Verificación: al bajar, las dos secciones aparecen con el fundido; pulsar una portada abre su ficha.
 
 6. **Estadísticas y sección 03.** Añadir la franja `home-stats reveal` con `HOME_STATS` (`transitionDelay` de `i * 90` ms) y la sección `ACTIVIDAD EN VIVO` con las dos `activity-card`: ticker de `TICKER` (`animationDelay` de `i * 60` ms, puntuaciones con `+` y `toLocaleString("es-ES")`) y top de `TOP_TODAY` (clases `top1`/`top2`/`top3` en los tres primeros, `tp-bar` con `width: (100 - i * 16) + "%"`, rango con `padStart(2, "0")`, y `lb-link` a `/salon`). Verificación: el podio sale en oro, plata y bronce; las filas del ticker entran escalonadas.
 
 7. **Precios y CTA final.** Añadir la sección `PRECIOS` (`price-card` con `PRICING_PERKS`, sello `pc-stamp`, botón `EMPEZAR GRATIS →` a `/acceso` a ancho completo, pie `No pedimos tarjeta. Nunca lo haremos.`) junto a `pricing-faq` con los tres `FAQ`, y la sección `home-final` con `¿LISTO PARA JUGAR?` e `INSERTAR MONEDA →` hacia `/biblioteca`. Verificación: `/` renderiza las seis secciones completas de arriba abajo.
 
-8. **Movimiento reducido.** Añadir `.reveal { opacity: 1; transform: none; }` al bloque `@media (prefers-reduced-motion: reduce)` que ya existe en `app/globals.css`, y sumar `.home-silos .silo`, `.hero-scroll .arrow` y `.tick-row` a la lista de animaciones anuladas. Verificación: con movimiento reducido activo en el sistema operativo, todo el contenido es visible sin scroll y sin animaciones.
+8. **Movimiento reducido.** Añadir un bloque `@media (prefers-reduced-motion: reduce)` **nuevo, al final de `app/globals.css`**, con:
+   - `.home-silos .silo` y `.hero-scroll .arrow` → `animation: none`
+   - `.tick-row` → `animation-duration: 1ms`
+   - `.reveal` → `opacity: 1; transform: none`
 
-9. **Pasada de `/frontend-design`.** Revisar `/` entre 360 px y 1440 px: foco de teclado visible en los seis enlaces-botón, ausencia de scroll horizontal, legibilidad del ticker por debajo de 520 px y contraste de `--ink-faint` en `stat-s`, `mini-cat`, `tk-t` y `pc-foot`. Aplicar solo correcciones que no rompan la fidelidad 1:1.
+   Dos precisiones que hay que respetar o la regla no hace nada:
+
+   - **Va al final, no dentro del bloque existente.** El bloque `prefers-reduced-motion` original está en la línea ~1053, pero el CSS del home se añade después (1069+). Con la misma especificidad gana la regla posterior, así que las reglas metidas en el bloque original quedan muertas: `.reveal` se queda en `opacity: 0` y las siluetas siguen flotando. Como efecto secundario, el bloque original no se toca.
+   - **`.tick-row` no puede llevar `animation: none`.** Su regla base tiene `opacity: 0` y solo llega a 1 vía `animation: tickin ... forwards`; anulando la animación, las siete filas quedarían invisibles para siempre. Va al grupo de `animation-duration: 1ms`, que es el que el archivo ya usa para `.fade-in`, `.slide-in` y `.hall-table .tr`.
+
+   Verificación: emulando `prefers-reduced-motion: reduce`, las seis `.reveal` computan `opacity: 1` sin la clase `in`, `.tick-row` computa `opacity: 1`, y `.silo` y `.arrow` computan `animation-name: none`.
+
+9. **Pasada de `/frontend-design`.** Revisar `/` entre 360 px y 1440 px: foco de teclado, scroll horizontal, legibilidad del ticker por debajo de 520 px y contraste de `--ink-faint`. Aplicar solo correcciones que no rompan la fidelidad 1:1. Resultado de la revisión:
+
+   - **Foco de teclado: sin cambios.** Recorrido real con `Tab`: los 12 enlaces del home ya reciben `outline: 2px solid rgb(0,245,255)`.
+   - **Corrección 1 — scroll horizontal a 360 px.** `.activity-card` es ítem de grid y hereda `min-width: auto`, así que no baja de su `min-content` (267 px), impuesto por `▸ ÚLTIMAS PUNTUACIONES` en fuente pixel sin poder partir. Arreglo: `.activity-grid > * { min-width: 0; }` bajo `max-width: 520px`. `.ac-title` ya tiene elipsis, así que trunca solo.
+   - **Corrección 2 — `GLOBAL` recortado entre 721 y 840 px.** Misma causa raíz, pero `.home-stats` tiene `overflow: hidden`, así que en vez de scroll producía texto cortado en silencio. Arreglo: subir el breakpoint de apilado de `.stat-block` de 720 a 880 px, con las mismas tres reglas del template.
+   - **Contraste: reportado, no corregido.** `--ink-faint` (`#4a4f70`) sobre `#0f0f18` da **2.4:1**, por debajo del 4.5:1 de WCAG AA, en `.stat-s`, `.mini-cat`, `.tk-t`, `.pc-foot` y `.hero-scroll` (todos de 9 a 11 px). No se toca: es una variable preexistente que usan las seis pantallas, fuera del alcance de esta spec, y cambiar solo esas cinco clases rompería la fidelidad 1:1. Merece su propia spec de accesibilidad.
 
 ---
 
@@ -182,16 +198,20 @@ Cada paso deja la aplicación arrancable con `npm run dev` y es committeable por
 
 - [ ] No existe `app/acerca/` ni ningún archivo con `about` en el nombre.
 - [ ] `components/nav.tsx` no ha cambiado y no contiene el texto `Acerca de`.
-- [ ] `app/globals.css` no contiene ninguna regla `.about-*`, `.gp-*`, `.contact-*`, `.term-*`, `.lg-*`, `.highlight*`, `.score-pop`, `.live-led`, `.rivet`, `.screw`, `.div-*`.
+- [ ] `app/globals.css` no contiene ninguna regla `.about-*`, `.gp-*`, `.contact-*`, `.term-*`, `.lg-*`, `.highlight*`, `.score-pop`, `.rivet`, `.screw`, `.div-*`.
+- [ ] `app/globals.css` no contiene `.live-led` ni `@keyframes pulse-led` (CSS huérfano excluido a mano del rango ACTIVITY).
 - [ ] `app/globals.css` no contiene `@keyframes pxblink`, `@keyframes scorepop` ni `@keyframes shake`.
 
 **Fidelidad e hidratación**
 
 - [ ] `/` no produce advertencias de hidratación en la consola del navegador.
 - [ ] `app/globals.css` contiene `@keyframes float`, `@keyframes bounce` y `@keyframes tickin`.
-- [ ] Ninguna regla previa de `app/globals.css` ha sido modificada (`git diff` sobre el archivo solo muestra líneas añadidas al final, más el bloque de `prefers-reduced-motion`).
+- [ ] Ninguna regla previa de `app/globals.css` ha sido modificada: `git diff --numstat app/globals.css` no reporta ninguna línea eliminada, y `head -1068 app/globals.css` es idéntico byte a byte al archivo antes de la rama.
+- [ ] `app/globals.css` termina con tres bloques propios: `@media (prefers-reduced-motion: reduce)` para el home, `@media (max-width: 520px)` con `.activity-grid > * { min-width: 0 }`, y `@media (max-width: 880px)` con el apilado de `.stat-block`.
 - [ ] Comparada contra `references/templates/home-about/arcade-vault-standalone.html` abierta en el navegador, `/` coincide en estructura, copia y colores.
-- [ ] Entre 360 px y 1440 px no aparece scroll horizontal en `/`.
+- [ ] Entre 360 px y 1440 px no aparece scroll horizontal en `/` (comprobado en 360, 375, 414, 520, 600, 721, 768, 840, 880, 900, 1024, 1280 y 1440).
+- [ ] En ese mismo barrido, ningún descendiente de `.home` sobresale del ancho del viewport; en particular `GLOBAL` se lee entero entre 721 y 880 px.
+- [ ] Los 12 enlaces del home muestran `outline` visible al recorrerlos con `Tab`.
 
 ---
 
@@ -228,7 +248,12 @@ Cada paso deja la aplicación arrancable con `npm run dev` y es committeable por
 - **Sí:** copiar los dos rangos de `styles.css` verbatim al final de `globals.css`. Coherente con la decisión de la spec 01 de no traducir el prototipo a Tailwind, y hace el diff auditable línea a línea contra el original.
 - **No:** traducir a utilidades Tailwind v4. Mismo razonamiento que la spec 01: trabajo sin beneficio y con riesgo de deriva visual.
 - **Sí:** añadir el CSS **antes** de los componentes (paso 2), al revés que la spec 01, que lo dejó para el final. Aquí el port es verbatim y cada sección necesita sus reglas para poder verificarse al terminar su paso.
-- **Sí:** una única regla nueva fuera del port: `.reveal` en `prefers-reduced-motion`. Es la excepción justificada, no una licencia para retocar el port.
+- **Sí:** tres bloques propios al final del archivo, fuera del port: `prefers-reduced-motion` del home y las dos correcciones de responsive del paso 9. Son las excepciones justificadas, no una licencia para retocar el port.
+- **Sí:** poner esos bloques al final en vez de editar los existentes. En CSS plano, a igual especificidad gana la regla posterior: metidos antes del CSS del home quedarían muertos. Además deja intacto todo lo anterior, que es lo que exige el criterio de aceptación.
+- **Sí:** excluir a mano `.live-led` y `@keyframes pulse-led` del rango copiado. El "verbatim" era el medio; el fin es que `globals.css` no cargue con nada que el home no use. No lo usa ningún template, ni siquiera About.
+- **No:** dejar `.live-led` dentro por respetar el corte de líneas al pie de la letra. Serían cuatro líneas muertas y un criterio de aceptación incumplido a cambio de nada.
+- **Sí:** arreglar los dos desbordes con `min-width: 0` y con el breakpoint del propio template, no reescribiendo la maqueta. Ambos son el mismo bug latente del template (`min-width: auto` en ítems de grid) y el arreglo es de una línea en cada caso.
+- **No:** tocar `--ink-faint` para arreglar el contraste. La usan las seis pantallas: cambiarla se sale del alcance de esta spec y hacerlo solo en el home rompe la fidelidad 1:1. Va a su propia spec.
 
 **Componentes**
 
@@ -244,6 +269,9 @@ Cada paso deja la aplicación arrancable con `npm run dev` y es committeable por
 | Riesgo | Mitigación |
 | --- | --- |
 | `.reveal` arranca en `opacity: 0`; si el IntersectionObserver no dispara (JS deshabilitado, error en el bundle, viewport muy alto), cinco de las siete secciones quedan invisibles con un 200 en la respuesta | Paso 8: regla de `prefers-reduced-motion` que fuerza `.reveal { opacity: 1 }`. Cubre el caso de accesibilidad pero **no** el de JS caído — asumido: el resto de la app ya requiere JS. Criterio de aceptación que verifica la revelación real con scroll. |
+| Una regla añadida al bloque `prefers-reduced-motion` existente queda muerta sin avisar: está antes del CSS del home y pierde por orden de cascada | Paso 8 lo fija explícitamente al final del archivo. Se detectó porque la verificación mide `getComputedStyle`, no porque la regla "se vea bien" en el diff. |
+| `min-width: auto` en ítems de grid provoca desbordes que `overflow: hidden` convierte en texto recortado en silencio, sin scroll que lo delate | Paso 9: el barrido de anchos compara `getBoundingClientRect().right` contra `clientWidth`, no solo `scrollWidth > clientWidth`. Así salió `GLOBAL`, que no producía scroll. |
+| `--ink-faint` a 2.4:1 incumple WCAG AA en cinco textos del home | Documentado en el paso 9 y deliberadamente no corregido aquí. Pendiente de una spec de accesibilidad que trate la variable en las seis pantallas a la vez. |
 | Al copiar `styles.css` se cuela sin querer el bloque About (líneas 1070–1620) | Los rangos están fijados en el paso 2 y hay cuatro criterios de aceptación que hacen `grep` de `.about-*`, `.gp-*`, `.contact-*` y de los tres `@keyframes` exclusivos de About. |
 | Colisión de nombres de clase entre el CSS nuevo y las 1068 líneas existentes | Verificado antes de escribir la spec: los ~90 selectores del bloque de home no existen en `globals.css`. Reverificar tras el paso 2 si `globals.css` cambia por otra rama. |
 | `@keyframes float`, `bounce` o `tickin` se pierden si el corte de líneas se desplaza | Criterio de aceptación explícito que exige los tres presentes. Sin `float` las silhouettes se quedan quietas y el fallo pasa desapercibido. |
